@@ -25,8 +25,6 @@ int main(int argc, char *argv[])
 
       list_t *l = list_mk(elements);
 
-      disrupt = true;
-
       for (uint64_t i = 0; i < elements; ++i)
         list_append(l, (void *)i);
 

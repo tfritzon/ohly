@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-bool disrupt;
-
 typedef void(*mapfun)(void *, void *);
 typedef struct opaque_list list_t;
 

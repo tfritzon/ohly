@@ -23,37 +23,14 @@ node_t **nodes;
 
 #define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
 
-static void shuffle(void *array, size_t n, size_t size) {
-    char tmp[size];
-    char *arr = array;
-    size_t stride = size * sizeof(char);
-
-    if (n > 1) {
-        size_t i;
-        for (i = 0; i < n - 1; ++i) {
-            size_t rnd = (size_t) rand();
-            size_t j = i + rnd / (RAND_MAX / (n - i) + 1);
-
-            memcpy(tmp, arr + j * stride, size);
-            memcpy(arr + j * stride, arr + i * stride, size);
-            memcpy(arr + i * stride, tmp, size);
-        }
-    }
-}
-
-list_t *list_mk(int64_t size)
-{
-  nodes = calloc(size + 1, sizeof(node_t));
-  for (int i = 0; i < size + 1; ++i)
-    nodes[i] = calloc(1, sizeof(node_t));
-  // Shuffle
-  shuffle(nodes, NELEMS(nodes)-1, sizeof(nodes[0]));
-  return calloc(1, sizeof(list_t));
-}
-
+void *padding;
 static inline node_t *node_mk(void *e, node_t *n)
 {
-  node_t *tmp = *nodes ? *(nodes++) : malloc(sizeof(node_t));
+  // TODO: should be able to give probability of same cache
+  // line locality, to determine how often padding should
+  // happen
+  padding = malloc(64);
+  node_t *tmp = malloc(sizeof(node_t));
 
   if (tmp)
     {
@@ -61,6 +38,11 @@ static inline node_t *node_mk(void *e, node_t *n)
       tmp->next = n;
     }
   return tmp;
+}
+
+list_t *list_mk(int64_t size)
+{
+  return calloc(1, sizeof(list_t));
 }
 
 void list_append(list_t *l, void *e)
@@ -153,7 +135,7 @@ void *list_delete(list_t *l, int64_t i)
   return tmp_element;
 }
 
-void dump_list(list_t *l) 
+void dump_list(list_t *l)
 {
   printf("Dumping list\n");
   node_t *n = l->first;
