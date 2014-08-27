@@ -23,6 +23,7 @@ main( int argc, char ** argv )
       elem= calloc( 1, sizeof(struct Node) );
       elem->value= i;
       last->next= elem;
+      last = elem;
     }
 
   for( i= 0; i < 10000; i++ )
