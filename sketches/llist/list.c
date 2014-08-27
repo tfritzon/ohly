@@ -41,19 +41,9 @@ static void shuffle(void *array, size_t n, size_t size) {
     }
 }
 
-list_t *list_mk(int64_t size)
-{
-  nodes = calloc(size + 1, sizeof(node_t));
-  for (int i = 0; i < size + 1; ++i)
-    nodes[i] = calloc(1, sizeof(node_t));
-  // Shuffle
-  shuffle(nodes, NELEMS(nodes)-1, sizeof(nodes[0]));
-  return calloc(1, sizeof(list_t));
-}
-
 static inline node_t *node_mk(void *e, node_t *n)
 {
-  node_t *tmp = *nodes ? *(nodes++) : malloc(sizeof(node_t));
+  node_t *tmp = malloc(sizeof(node_t));
 
   if (tmp)
     {
@@ -61,6 +51,20 @@ static inline node_t *node_mk(void *e, node_t *n)
       tmp->next = n;
     }
   return tmp;
+}
+
+void *padding;
+list_t *list_mk(int64_t size)
+{
+  list_t *list = calloc(1, sizeof(list_t)); 
+  // do size number of prepends
+  list->last = list->first = node_mk(NULL, NULL);
+  for (int i = 1; i < size; ++i) 
+    {
+      padding = malloc(64); 
+      list->first = node_mk((void *)i, list->first);
+    }
+  return list;
 }
 
 void list_append(list_t *l, void *e)
