@@ -4,9 +4,8 @@
 
 struct Node
 {
-  short next;
-  //struct Node * next;
   int value;
+  struct Node * next;
 };
 
 #define PTR(b, o) (b)+(o)
@@ -25,12 +24,10 @@ traverse(struct Node * list)
     {
       sum= 0;
       elem= list;
-      while( elem->next != 0 )
-	//while( elem->next != NULL )
+      while( elem->next != NULL )
 	{
 	  sum++;
-	  elem= PTR(list, elem->next);
-	  //elem= elem->next;
+	  elem= elem->next;
 	}
     }
   T1;
@@ -50,9 +47,7 @@ main( int argc, char ** argv )
     {
       elem= list+i;
       elem->value= i;
-      (elem-1)->next= elem-list;
-      //(elem-1)->next= elem;
-      
+      (elem-1)->next= elem;
     }
 
   traverse(list);

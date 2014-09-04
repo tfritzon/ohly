@@ -4,8 +4,8 @@
 
 struct Node
 {
-  struct Node * next;
   int value;
+  struct Node * next;
 };
 
 struct List

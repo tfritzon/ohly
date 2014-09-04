@@ -1,8 +1,8 @@
 #ifndef TWO_H
 #define TWO_H
 
-#define LISTSIZE 8192
-#define LOOPS 1000000
+#define LISTSIZE 2048
+#define LOOPS 10000000
 
 #include <sys/time.h>
 #define TSETUP struct timeval t;double t1,t0;struct timezone tz;tz.tz_minuteswest=0;tz.tz_dsttime=0
