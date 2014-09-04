@@ -166,8 +166,6 @@ line_t *b_line(block_t *b, void *p)
 
 line_t *b_conflicting_line(line_t *l)
 {
-  assert (l->heap->associativity != DIRECT);
-
   if (l->next->block == l->block) 
     {
       return l->next;
@@ -194,12 +192,27 @@ void *h_ptr_rmalloc(heap_t *h, void *p, size_t size)
   return NULL;
 }
 
+// XXX: only supports size < 8 * word_size right now
 void *h_lmalloc(heap_t *h, size_t size)
 {
+  uint8_t __mask = ~(~0 >> (size / word_size)); 
+  uint8_t *freemap = h->freemap - 1;
+  uint8_t shift = 0;
+  while (*++freemap)
+    {
+      uint8_t mask = __mask;
+      while (mask && *freemap & mask != mask) 
+	{
+	  ++shift;
+	  mask = mask >> 1;
+	}
+      if (mask) break;
+    }
+  return h->memory + (freemap - h->freemap) * sizeof(uint8_t) + shift;
+  
   // Search for the leftmost size / h->word_size unset bits in
   // h->freemap from the start of h->memory, and allocate at the
   // corresponding found offset
-  return NULL;
 }
 
 void *h_rmalloc(heap_t *h, size_t size)
