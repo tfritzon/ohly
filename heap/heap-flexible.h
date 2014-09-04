@@ -48,8 +48,8 @@ line_t *h_line(heap_t *h, void *p);
 /** Return a pointer to the line enclosing a pointer p */
 line_t *b_line(block_t *b, void *p);
 
-/** Return a pointer to a blocks (with some free space) which is mapped to the same cache line */
-block_t *b_conflicting_block(block_t *b);
+/** Return a pointer to a line in the same block */
+line_t *b_conflicting_line(line_t *l)
 
 /** Return a pointer to the left-adjacent block */
 block_t *b_ladjacent(block_t *b);
