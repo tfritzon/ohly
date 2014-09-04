@@ -49,7 +49,7 @@ line_t *h_line(heap_t *h, void *p);
 line_t *b_line(block_t *b, void *p);
 
 /** Return a pointer to a line in the same block */
-line_t *b_conflicting_line(line_t *l)
+line_t *b_conflicting_line(line_t *l);
 
 /** Return a pointer to the left-adjacent block */
 block_t *b_ladjacent(block_t *b);

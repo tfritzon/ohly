@@ -195,13 +195,13 @@ void *h_ptr_rmalloc(heap_t *h, void *p, size_t size)
 // XXX: only supports size < 8 * word_size right now
 void *h_lmalloc(heap_t *h, size_t size)
 {
-  uint8_t __mask = ~(~0 >> (size / word_size)); 
+  uint8_t __mask = ~(~0 >> (size / h->word_size)); 
   uint8_t *freemap = h->freemap - 1;
   uint8_t shift = 0;
   while (*++freemap)
     {
       uint8_t mask = __mask;
-      while (mask && *freemap & mask != mask) 
+      while (mask && (*freemap & mask) != mask) 
 	{
 	  ++shift;
 	  mask = mask >> 1;
