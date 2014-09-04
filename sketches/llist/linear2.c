@@ -6,7 +6,7 @@
 #include <string.h>
 #include "list.h"
 
-typedef int16_t offsetptr;
+typedef int32_t offsetptr;
 #define NIL -1
 #define NOTNIL(x) (x != -1)
 #define get(base,field) (field == NIL ? NULL : (((void *) base) + field))
@@ -64,8 +64,8 @@ void dump_list_compact(list_t *l, char* msg)
 
 void list_append(list_t *l, void *e)
 {
-  printf("Appending %p\n", e);
-  dump_list_compact(l, "<<before append>>");
+  /* printf("Appending %p\n", e); */
+  /* dump_list_compact(l, "<<before append>>"); */
   if (NOTNIL(l->first))
     {
       node_t *tmp = get(l, l->last);
@@ -81,7 +81,7 @@ void list_append(list_t *l, void *e)
       l->first = to_offset(l, new);
       l->last = to_offset(l, new);
     }
-  dump_list_compact(l, "<<after append>> ");
+  /* dump_list_compact(l, "<<after append>> "); */
 }
 
 void list_prepend(list_t *l, void *e)
@@ -149,16 +149,16 @@ static inline node_t *shift_one(node_t **tmp, node_t *last)
 
 void *list_delete(list_t *l, int64_t i)
 {
-  printf("Delete %lld\n", i);
-  dump_list_compact(l, "<<before delete>>");
+  /* printf("Delete %lld\n", i); */
+  /* dump_list_compact(l, "<<before delete>>"); */
   assert(i >= 0);
 
   node_t *to_address = i ? find(l, get(l, l->first), i) : get(l, l->first);
   node_t *from_address = get(to_address, to_address->next);
 
-  printf("to_address %p with %lld\n", to_address, (int64_t) to_address->element);
-  printf("to_address %p with %p\n", to_address, get(to_address, to_address->next));
-  printf("from_address %p with %p\n", from_address, get(from_address, from_address->next));
+  /* printf("to_address %p with %lld\n", to_address, (int64_t) to_address->element); */
+  /* printf("to_address %p with %p\n", to_address, get(to_address, to_address->next)); */
+  /* printf("from_address %p with %p\n", from_address, get(from_address, from_address->next)); */
   
   l->last -= sizeof(node_t);
 
@@ -173,7 +173,7 @@ void *list_delete(list_t *l, int64_t i)
     }
   ++l->capacity;
   --l->frontier;
-  dump_list_compact(l, "<<after delete>> ");
+  /* dump_list_compact(l, "<<after delete>> "); */
   return NULL;
 }
 

@@ -64,7 +64,7 @@ ifeq ($(config),release)
 endif
 
 OBJECTS := \
-	$(OBJDIR)/linear2.o \
+	$(OBJDIR)/linear3.o \
 	$(OBJDIR)/main.o \
 
 RESOURCES := \
@@ -126,7 +126,7 @@ $(GCH): $(PCH)
 	$(SILENT) $(CC) $(CFLAGS) -o "$@" -c "$<"
 endif
 
-$(OBJDIR)/linear2.o: linear2.c
+$(OBJDIR)/linear3.o: linear3.c
 	@echo $(notdir $<)
 	$(SILENT) $(CC) $(CFLAGS) -o "$@" -c "$<"
 $(OBJDIR)/main.o: main.c
