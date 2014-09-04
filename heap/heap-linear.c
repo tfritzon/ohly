@@ -16,12 +16,17 @@ void *heap_init(size_t size)
   return heap;
 }
 
-void *new(void *frontier, size_t size) 
+void *new(void *heap, size_t size) 
 {
-  void *location = frontier;
+  static void * frontier= NULL;
+  void *location;
+
+  if( frontier == NULL )
+    frontier= heap;
+
+  location= frontier;
   
-  // TODO: what about pointer alignment? 
-  frontier += size;
+  frontier += (size + (size%8)); // always aligned to 64b
 
   return location;
 }
@@ -29,11 +34,13 @@ void *new(void *frontier, size_t size)
 void *newa(void *heap, void *affinity, size_t size) 
 {
   // Unsupported operation in heap-linear.c
-  assert(false);
+  // Let's ignore the wish and defer to new
+  return new( heap, size );
 }
 
 void *newr(void *heap, void *begin, void *end, size_t size) 
 {
   // Unsupported operation in heap-linear.c
-  assert(false);
+  // Let's ignore the directive and defer to new
+  return new( heap, size );
 }
