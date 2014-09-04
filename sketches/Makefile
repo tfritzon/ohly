@@ -4,4 +4,4 @@ CC=gcc -O1
 all: $(OBJS) two.h
 
 clean:
-	rm -f $(OBJS) *.o *~
+	rm -f $(OBJS) *.o *~ *.s
