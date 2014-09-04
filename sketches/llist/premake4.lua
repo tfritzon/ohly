@@ -52,7 +52,7 @@ project "linear2"
   kind "ConsoleApp"
   language "C"
   files {
-    "linear2.c",
+    "linear3.c",
     "main.c"
   }
 
