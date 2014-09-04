@@ -1,4 +1,6 @@
 #include "heap.h"
+#include <stdlib.h>
+#include <stdbool.h>
 #include <assert.h>
 
 void *heap_init(size_t size)
