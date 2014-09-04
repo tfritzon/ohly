@@ -3,10 +3,10 @@ CC=gcc
 
 all: linear
 
-linear: heap.h heap_linear.c
-	gcc -c heap_linear.c -o heap_linear.o
-	ar rcs libheap_linear.a heap_linear.o
-	cp libheap_linear.a ../lib
+linear: heap.h heap-linear.c
+	gcc -c heap-linear.c -o heap-linear.o
+	ar rcs libheap-linear.a heap-linear.o
+	cp libheap-linear.a ../lib
 
 clean:
 	rm *.o *.a *~
