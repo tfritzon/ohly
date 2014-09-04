@@ -8,6 +8,7 @@ struct line
   line_t *next;
   void   *start_address;
   void   *end_address;
+  block_t *block;
   heap_t *heap;
 };
 
@@ -42,14 +43,14 @@ struct heap
 static void line_setup(line_t *prev,
                        line_t *this,
                        line_t *next,
-                       heap_t *heap)
+		       block_t *block)
 {
   this->prev = prev;
   this->next = next;
-  this->heap = heap;
+  this->block = block;
 
-  this->start_address = (prev ? prev->end_address + 1 : heap->memory);
-  this->end_address   = this->start_address + heap->block_size - 1;
+  this->start_address = (prev ? prev->end_address + 1 : block->heap->memory);
+  this->end_address   = this->start_address + block->heap->block_size - 1;
 }
 
 static void block_setup(block_t *prev,
@@ -74,7 +75,7 @@ static void block_setup(block_t *prev,
       line_t *this_line = &this->lines[i];
       line_t *next_line = (next == NULL && i == heap->lines_per_block - 1) ? NULL : &this->lines[i+1];
 
-      line_setup(prev_line, this_line, next_line, heap);
+      line_setup(prev_line, this_line, next_line, this);
 
       prev_line = this_line;
     }
@@ -163,30 +164,17 @@ line_t *b_line(block_t *b, void *p)
   return NULL;
 }
 
-static inline uint32_t b_index(block_t *b) 
+line_t *b_conflicting_line(line_t *l)
 {
-  return (b - b->heap->blocks) / sizeof(struct block);
-}
+  assert (l->heap->associativity != DIRECT);
 
-block_t *b_conflicting_block(block_t *b)
-{
-  block_t *blocks = b->heap->blocks;
-  uint32_t i = b_index(b);
-  uint32_t half = b->heap->no_blocks / 2;
-  uint32_t quarter = half / 2;
-
-  switch (b->heap->associativity) 
+  if (l->next->block == l->block) 
     {
-    case DIRECT:
-      assert(false);
-
-    case TWO_WAY:
-      if (i < half) return &blocks[i + half];
-      else          return &blocks[i - half];
-
-    case FOUR_WAY:
-      if (i < quarter * 3) return &blocks[i + quarter];
-      else                 return &blocks[i - quarter];
+      return l->next;
+    }
+  else
+    {
+      return l->prev;
     }
 }
 
