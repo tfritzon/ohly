@@ -69,8 +69,9 @@ static void block_setup(block_t *prev,
   this->lines = lines;
 
   line_t *prev_line = NULL;
+  int i;
 
-  for (int i = 0; i < heap->lines_per_block; ++i)
+  for (i = 0; i < heap->lines_per_block; ++i)
     {
       line_t *this_line = &this->lines[i];
       line_t *next_line = (next == NULL && i == heap->lines_per_block - 1) ? NULL : &this->lines[i+1];
@@ -110,8 +111,9 @@ heap_t *heap_setup(uint32_t heap_size,
   heap->freemap = calloc(heap_size / sizeof(uint8_t) / word_size, sizeof(uint8_t)); 
 
   block_t *prev_block = NULL;
+  int i;
 
-  for (int i = 1; i < no_blocks; ++i)
+  for (i = 1; i < no_blocks; ++i)
     {
       block_t *this_block = &heap->blocks[i];
       block_t *next_block = (i < no_blocks - 1) ? &heap->blocks[i+1] : NULL;
@@ -133,7 +135,8 @@ void h_free(heap_t *h, void *p)
 
 block_t *h_block(heap_t *h, void *p)
 {
-  for (int i = 0; i < h->no_blocks; ++i)
+  int i;
+  for (i = 0; i < h->no_blocks; ++i)
     {
       block_t *b = &h->blocks[i];
       if (b->start_address <= p && p <= b->end_address) return b;
@@ -144,7 +147,8 @@ block_t *h_block(heap_t *h, void *p)
 
 line_t *h_line(heap_t *h, void *p)
 {
-  for (int i = 0; i < h->no_blocks; ++i)
+  int i;
+  for (i = 0; i < h->no_blocks; ++i)
     {
       block_t *b = &h->blocks[i];
       if (b->start_address <= p && p <= b->end_address) return b_line(b, p);
@@ -155,7 +159,8 @@ line_t *h_line(heap_t *h, void *p)
 
 line_t *b_line(block_t *b, void *p)
 {
-  for (int i = 0; i < b->heap->lines_per_block; ++i)
+  int i;
+  for (i = 0; i < b->heap->lines_per_block; ++i)
     {
       line_t *l = &b->lines[i];
       if (l->start_address <= p && p <= l->end_address) return l;
