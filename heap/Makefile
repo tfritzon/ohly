@@ -1,7 +1,10 @@
 CC=gcc -Wall -g
 #CFLAGS
 
-all: linear optimal flexible
+all: linear optimal flexible 
+
+test: flexible
+	$(CC) heap-flexible.o -o test_flexible test_flexible.c
 
 optimal: heap.h heap-optimal.c
 	$(CC) -c heap-optimal.c -o heap-optimal.o
