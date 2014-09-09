@@ -94,10 +94,10 @@ void *b_lmalloc(block_t *b, size_t size, bool ok_cross_block_boundary);
 void *b_rmalloc(block_t *b, size_t size, bool ok_cross_block_boundary);
 
 /** Allocate to the left of p in block b */
-void *b_ptr_lmalloc(block_t *b, void *p, size_t size);
+void *b_ptr_lmalloc(block_t *b, void *p, size_t size, bool ok_cross_block_boundary);
 
 /** Allocate to the right of p in block b */
-void *b_ptr_rmalloc(block_t *b, void *p, size_t size);
+void *b_ptr_rmalloc(block_t *b, void *p, size_t size, bool ok_cross_block_boundary);
 
 // ================================================================ 
 // Allocate in a line

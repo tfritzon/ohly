@@ -34,7 +34,7 @@ struct block
 struct heap
 {
   void    *memory;
-  uint8_t *freemap; 
+  mask_t *freemap; 
   block_t *blocks;
   line_t  *lines;
   assoc_t  associativity;
@@ -55,6 +55,16 @@ static inline mask_t *freemap_for_line(line_t *l)
 static inline mask_t *freemap_for_block(block_t *b)
 {
   return b->heap->freemap + (b->start_address - b->heap->memory) / sizeof(mask_t); 
+}
+
+static inline void *h_end_address(heap_t *h)
+{
+  return h->memory + h->heap_size;
+}
+
+static inline void *h_start_address(heap_t *h)
+{
+  return h->memory;
 }
 
 static void line_setup(line_t *prev,
@@ -126,7 +136,7 @@ heap_t *heap_setup(uint32_t heap_size,
   heap->word_size       = word_size;
 
   heap->lines = calloc(no_blocks * heap->lines_per_block, sizeof(struct line));
-  heap->freemap = calloc(heap_size / sizeof(uint8_t) / word_size, sizeof(uint8_t)); 
+  heap->freemap = calloc(heap_size / sizeof(mask_t) / word_size, sizeof(mask_t)); 
 
   block_t *prev_block = NULL;
   int i;
@@ -147,8 +157,8 @@ heap_t *heap_setup(uint32_t heap_size,
 // TODO: triple check 
 void h_free(heap_t *h, void *p) 
 {
-  uint32_t offset = (p - h->memory) / h->word_size / sizeof(uint8_t);
-  h->freemap[offset] &= ~(1UL << ((p - h->memory) / h->word_size) % sizeof(uint8_t));
+  uint32_t offset = (p - h->memory) / h->word_size / sizeof(mask_t);
+  h->freemap[offset] &= ~(1UL << ((p - h->memory) / h->word_size) % sizeof(mask_t));
 }
 
 block_t *h_block(heap_t *h, void *p)
@@ -199,16 +209,81 @@ line_t *b_conflicting_line(line_t *l)
     }
 }
 
+void *lmalloc_general(const uint8_t word_size, 
+		      void *mem_lower, 
+		      void *mem_upper, 
+		      mask_t mask, 
+		      mask_t *freemap)
+{
+  // TODO: 
+  // allocations never span freemap boundaries
+  uint8_t shift = 0;
+
+  while (mem_lower < mem_upper)
+    {
+      while (mask) // TODO: optimise this check
+	{
+	  if ((*freemap & mask) != mask)
+	    {
+	      return mem_lower + (shift * word_size);
+	    }
+	  else
+	    {
+	      mask = mask >> 1;
+	      ++shift;
+	    }
+	}
+      mem_lower += word_size;
+      ++freemap;
+    }
+
+  return NULL;
+}
+
+void *rmalloc_general(const uint8_t word_size, 
+		      void *mem_lower, 
+		      void *mem_upper, 
+		      mask_t mask, 
+		      mask_t *freemap)
+{
+  // TODO: 
+  // allocations never span freemap boundaries
+
+  uint8_t shift = 0;
+  
+  while (mem_upper >= mem_lower)
+    {
+      while (mask)
+	{
+	  if ((*freemap & mask) != mask)
+	    {
+	      return mem_upper + (shift * word_size);
+	    }
+	  else
+	    {
+	      mask = mask << 1;
+	      ++shift;
+	    }
+	}
+      mem_upper -= word_size;
+      ++freemap;
+    }
+
+  return NULL;
+}
+
+
+
 // XXX: only support left direction for now
-void *h_malloc_generic(heap_t *h, size_t size, uint8_t *freemap, enum direction_t dir)
+void *h_malloc_generic(heap_t *h, size_t size, mask_t *freemap, enum direction_t dir)
 {
   assert(dir == LEFT);
 
-  uint8_t __mask = ~(~0 >> (size / h->word_size)); 
+  mask_t __mask = ~(~0 >> (size / h->word_size)); 
   uint8_t shift = 0;
   do
     {
-      uint8_t mask = __mask;
+      mask_t mask = __mask;
       while (mask && (*freemap & mask) != mask) 
 	{
 	  ++shift;
@@ -217,7 +292,7 @@ void *h_malloc_generic(heap_t *h, size_t size, uint8_t *freemap, enum direction_
       if (mask) break;
     }
   while (++freemap);
-  return h->memory + (freemap - h->freemap) * sizeof(uint8_t) + shift;
+  return h->memory + (freemap - h->freemap) * sizeof(mask_t) + shift;
   
   // Search for the leftmost size / h->word_size unset bits in
   // h->freemap from the start of h->memory, and allocate at the
@@ -229,7 +304,7 @@ void *h_ptr_lmalloc(heap_t *h, void *p, size_t size)
   // Search for the leftmost size / h->word_size unset bits in
   // h->freemap from the offset of p, and allocate at the
   // corresponding found offset
-  void *freemap_offsetted = h->freemap + (p - h->memory) / sizeof(uint8_t);
+  void *freemap_offsetted = h->freemap + (p - h->memory) / sizeof(mask_t);
   return h_malloc_generic(h, size, freemap_offsetted, LEFT);
 }
 
@@ -238,7 +313,7 @@ void *h_ptr_rmalloc(heap_t *h, void *p, size_t size)
   // Search for the rightmost size / h->word_size unset bits in
   // h->freemap from the offset of p, and allocate at the
   // corresponding found offset
-  void *freemap_offsetted = h->freemap + (p - h->memory) / sizeof(uint8_t);
+  void *freemap_offsetted = h->freemap + (p - h->memory) / sizeof(mask_t);
   return h_malloc_generic(h, size, freemap_offsetted, RIGHT);
 }
 
@@ -258,91 +333,36 @@ void *h_rmalloc(heap_t *h, size_t size)
 
 void *b_lmalloc(block_t *b, size_t size, bool ok_cross_block_boundary)
 {
-  // As h_lmalloc, but allocate is done inside a block, with the
-  // opportunity to forbid allocs that would cross block
-  // boundaries.
-  return NULL;
+  return b_ptr_lmalloc(b, b->start_address, size, ok_cross_block_boundary);
 }
 
 void *b_rmalloc(block_t *b, size_t size, bool ok_cross_block_boundary)
 {
-  // See b_lmalloc
-  return NULL;
+  return b_ptr_lmalloc(b, b->end_address, size, ok_cross_block_boundary);
 }
 
-void *b_ptr_lmalloc(block_t *b, void *p, size_t size)
+void *b_ptr_lmalloc(block_t *b, void *p, size_t size, bool ok_cross_block_boundary)
 {
-  // See h_ptr_lmalloc
-  return NULL;
+  void *end_address = ok_cross_block_boundary ? h_end_address(b->heap) : b->end_address;
+  mask_t mask = ~(~0 >> (size / b->heap->word_size)); 
+
+  return lmalloc_general(b->heap->word_size, 
+			 p, 
+			 end_address, 
+			 mask, 
+			 freemap_for_block(b));
 }
 
-void *b_ptr_rmalloc(block_t *b, void *p, size_t size)
+void *b_ptr_rmalloc(block_t *b, void *p, size_t size, bool ok_cross_block_boundary)
 {
-  // See h_ptr_rmalloc
-  return NULL;
-}
+  void *start_address = ok_cross_block_boundary ? h_start_address(b->heap) : b->start_address;
+  mask_t mask = ~(~0 >> (size / b->heap->word_size)); 
 
-void *l_lmalloc_general(const uint8_t word_size, 
-			void *mem_lower, 
-			void *mem_upper, 
-			mask_t mask, 
-			mask_t *freemap)
-{
-  // TODO: 
-  // allocations never span freemap boundaries
-  uint8_t shift = 0;
-
-  while (mem_lower < mem_upper)
-    {
-      while (mask) // TODO: optimise this check
-	{
-	  if (*freemap & mask != mask)
-	    {
-	      return mem_lower + (shift * word_size);
-	    }
-	  else
-	    {
-	      mask = mask >> 1;
-	      ++shift;
-	    }
-	}
-      mem_lower += word_size;
-      ++freemap;
-    }
-
-  return NULL;
-}
-
-void *l_rmalloc_general(const uint8_t word_size, 
-			void *mem_lower, 
-			void *mem_upper, 
-			mask_t mask, 
-			mask_t *freemap)
-{
-  // TODO: 
-  // allocations never span freemap boundaries
-
-  uint8_t shift = 0;
-  
-  while (mem_upper >= mem_lower)
-    {
-      while (mask)
-	{
-	  if (*freemap & mask != mask)
-	    {
-	      return mem_upper + (shift * word_size);
-	    }
-	  else
-	    {
-	      mask = mask << 1;
-	      ++shift;
-	    }
-	}
-      mem_upper -= word_size;
-      ++freemap;
-    }
-
-  return NULL;
+  return rmalloc_general(b->heap->word_size, 
+			 p, 
+			 start_address, 
+			 mask, 
+			 freemap_for_block(b));
 }
 
 void *l_lmalloc(line_t *l, size_t size, bool ok_cross_line_boundary)
@@ -360,11 +380,11 @@ void *l_ptr_lmalloc(line_t *l, void *p, size_t size, bool ok_cross_line_boundary
   void *end_address = ok_cross_line_boundary ? l->block->end_address : l->end_address;
   mask_t mask = ~(~0 >> (size / l->heap->word_size)); 
 
-  return l_lmalloc_general(l->heap->word_size, 
-			   p, 
-			   end_address, 
-			   mask, 
-			   freemap_for_line(l));
+  return lmalloc_general(l->heap->word_size, 
+			 p, 
+			 end_address, 
+			 mask, 
+			 freemap_for_line(l));
 }
 
 void *l_ptr_rmalloc(line_t *l, void *p, size_t size, bool ok_cross_line_boundary)
@@ -372,11 +392,11 @@ void *l_ptr_rmalloc(line_t *l, void *p, size_t size, bool ok_cross_line_boundary
   void *start_address = ok_cross_line_boundary ? l->block->start_address : l->start_address;
   mask_t mask = ~(~0 >> (size / l->heap->word_size)); 
 
-  return l_rmalloc_general(l->heap->word_size, 
-			   p, 
-			   l->end_address, 
-			   mask, 
-			   freemap_for_line(l));
+  return rmalloc_general(l->heap->word_size, 
+			 p, 
+			 start_address, 
+			 mask, 
+			 freemap_for_line(l));
 }
 
 block_t *b_ladjacent(block_t *b) 
