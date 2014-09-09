@@ -27,9 +27,11 @@ typedef struct line line_t;
 
 enum associativity
   {
-    DIRECT   = 1,
-    TWO_WAY  = 2,
-    FOUR_WAY = 4
+    DIRECT     = 1,
+    TWO_WAY    = 2,
+    FOUR_WAY   = 4,
+    EIGHT_WAY  = 8,
+    TWELVE_WAY = 12
   };
 
 /** Setup a heap to allocate in */
