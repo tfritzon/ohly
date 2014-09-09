@@ -1,4 +1,4 @@
-CC=gcc -g
+CC=gcc -Wall -g
 #CFLAGS
 
 all: linear optimal flexible
