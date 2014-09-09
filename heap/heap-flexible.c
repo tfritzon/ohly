@@ -5,6 +5,7 @@ enum direction_t {
   RIGHT
 };
 
+typedef uint8_t mask_t;
 
 // A line is a contiguous space of cache_line size bytes, which
 // is aligned with a cache line.
@@ -45,6 +46,16 @@ struct heap
   uint8_t  cache_line_size;
   uint8_t  word_size;
 };
+
+static inline mask_t *freemap_for_line(line_t *l)
+{
+  return l->heap->freemap + (l->start_address - l->heap->memory) / sizeof(mask_t); 
+}
+
+static inline mask_t *freemap_for_block(block_t *b)
+{
+  return b->heap->freemap + (b->start_address - b->heap->memory) / sizeof(mask_t); 
+}
 
 static void line_setup(line_t *prev,
                        line_t *this,
@@ -271,28 +282,101 @@ void *b_ptr_rmalloc(block_t *b, void *p, size_t size)
   return NULL;
 }
 
+void *l_lmalloc_general(const uint8_t word_size, 
+			void *mem_lower, 
+			void *mem_upper, 
+			mask_t mask, 
+			mask_t *freemap)
+{
+  // TODO: 
+  // allocations never span freemap boundaries
+  uint8_t shift = 0;
+
+  while (mem_lower < mem_upper)
+    {
+      while (mask) // TODO: optimise this check
+	{
+	  if (*freemap & mask != mask)
+	    {
+	      return mem_lower + (shift * word_size);
+	    }
+	  else
+	    {
+	      mask = mask >> 1;
+	      ++shift;
+	    }
+	}
+      mem_lower += word_size;
+      ++freemap;
+    }
+
+  return NULL;
+}
+
+void *l_rmalloc_general(const uint8_t word_size, 
+			void *mem_lower, 
+			void *mem_upper, 
+			mask_t mask, 
+			mask_t *freemap)
+{
+  // TODO: 
+  // allocations never span freemap boundaries
+
+  uint8_t shift = 0;
+  
+  while (mem_upper >= mem_lower)
+    {
+      while (mask)
+	{
+	  if (*freemap & mask != mask)
+	    {
+	      return mem_upper + (shift * word_size);
+	    }
+	  else
+	    {
+	      mask = mask << 1;
+	      ++shift;
+	    }
+	}
+      mem_upper -= word_size;
+      ++freemap;
+    }
+
+  return NULL;
+}
+
 void *l_lmalloc(line_t *l, size_t size, bool ok_cross_line_boundary)
 {
-  // See h_lmalloc, but allocate in a line with boundary checking
-  return NULL;
+  return l_ptr_lmalloc(l, l->start_address, size, ok_cross_line_boundary);
 }
 
 void *l_rmalloc(line_t *l, size_t size, bool ok_cross_line_boundary)
 {
-  // See h_rmalloc, but allocate in a line with boundary checking
-  return NULL;
+  return l_ptr_rmalloc(l, l->end_address, size, ok_cross_line_boundary);
 }
 
-void *l_ptr_lmalloc(line_t *l, void *p, size_t size)
+void *l_ptr_lmalloc(line_t *l, void *p, size_t size, bool ok_cross_line_boundary)
 {
-  // See h_ptr_lmalloc
-  return NULL;
+  void *end_address = ok_cross_line_boundary ? l->block->end_address : l->end_address;
+  mask_t mask = ~(~0 >> (size / l->heap->word_size)); 
+
+  return l_lmalloc_general(l->heap->word_size, 
+			   p, 
+			   end_address, 
+			   mask, 
+			   freemap_for_line(l));
 }
 
-void *l_ptr_rmalloc(line_t *l, void *p, size_t size)
+void *l_ptr_rmalloc(line_t *l, void *p, size_t size, bool ok_cross_line_boundary)
 {
-  // See h_ptr_rmalloc
-  return NULL;
+  void *start_address = ok_cross_line_boundary ? l->block->start_address : l->start_address;
+  mask_t mask = ~(~0 >> (size / l->heap->word_size)); 
+
+  return l_rmalloc_general(l->heap->word_size, 
+			   p, 
+			   l->end_address, 
+			   mask, 
+			   freemap_for_line(l));
 }
 
 block_t *b_ladjacent(block_t *b) 

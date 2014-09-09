@@ -110,10 +110,10 @@ void *l_lmalloc(line_t *l, size_t size, bool ok_cross_line_boundary);
 void *l_rmalloc(line_t *l, size_t size, bool ok_cross_line_boundary);
 
 /** Allocate to the left of p in line l */
-void *l_ptr_lmalloc(line_t *l, void *p, size_t size);
+void *l_ptr_lmalloc(line_t *l, void *p, size_t size, bool ok_cross_line_boundary);
 
 /** Allocate to the right of p in line l */
-void *l_ptr_rmalloc(line_t *l, void *p, size_t size);
+void *l_ptr_rmalloc(line_t *l, void *p, size_t size, bool ok_cross_line_boundary);
 
 
 // ================================================================ 
