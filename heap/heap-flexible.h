@@ -84,7 +84,7 @@ struct heap
 
 
 /** Setup a heap to allocate in */
-heap_t *heap_setup(uint32_t heap_size, uint32_t cache_size, uint8_t cache_line_size, uint8_t word_size, assoc_t associativity);
+heap_t *heap_setup(uint32_t heap_size, uint32_t l1_cache_size, uint8_t cache_line_size, uint8_t word_size, assoc_t associativity);
 
 // ================================================================ 
 // Get blocks and lines enclosing pointers
@@ -101,6 +101,9 @@ line_t *b_line(block_t *b, void *p);
 
 /** Return a pointer to a line in the same block */
 line_t *b_conflicting_line(line_t *l);
+
+/** Return a pointer to another block given a line */
+block_t *b_non_conflicting_block(line_t *l);
 
 /** Return a pointer to the left-adjacent block */
 block_t *b_ladjacent(block_t *b);

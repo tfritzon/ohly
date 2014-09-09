@@ -162,6 +162,21 @@ line_t *b_conflicting_line(line_t *l)
     }
 }
 
+block_t *b_non_conflicting_block(line_t *l)
+{
+  block_t b = b_ladjacent(l->block);
+
+  if (b) 
+    {
+      return b;
+    }
+  else
+    {
+      return l->heap->blocks;
+    }
+
+}
+
 void *lmalloc_general(const uint8_t word_size, 
 		      void *mem_lower, 
 		      void *mem_upper, 
@@ -345,4 +360,25 @@ line_t *l_ladjacent(line_t *l)
 line_t *l_radjacent(line_t *l)
 {
   return l->next;
+}
+
+void *new(heap_t *h, size_t size)
+{
+  return h_lmalloc(h, size);
+}
+
+void *newa(heap_t *h, void *affine, size_t size)
+{
+  line_t *line = h_line(h, affine);
+  void *result = l_ptr_lmalloc(line, affine, size, false);
+
+  if (result) 
+    {
+      return result;
+    }
+  else
+    {
+      block_t *b = b_non_conflicting_block(line);
+      return b_lmalloc(b, size, true);
+    }
 }
