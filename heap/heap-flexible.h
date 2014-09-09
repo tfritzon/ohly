@@ -24,6 +24,7 @@ typedef enum associativity assoc_t;
 typedef struct block block_t;
 typedef struct heap heap_t;
 typedef struct line line_t;
+typedef uint8_t mask_t;
 
 enum associativity
   {
@@ -33,6 +34,54 @@ enum associativity
     EIGHT_WAY  = 8,
     TWELVE_WAY = 12
   };
+
+
+enum direction_t {
+  LEFT,
+  RIGHT
+};
+
+// A line is a contiguous space of cache_line size bytes, which
+// is aligned with a cache line.
+struct line
+{
+  line_t *prev;
+  line_t *next;
+  void   *start_address;
+  void   *end_address;
+  block_t *block;
+  heap_t *heap;
+};
+
+// A block is a contiguous space of cache size bytes, divided into
+// a number of lines which all map to the same cache line
+struct block
+{
+  block_t *prev;
+  block_t *next;
+  void    *start_address;
+  void    *end_address;
+  heap_t  *heap;
+  line_t  *lines;
+};
+
+struct heap
+{
+  void    *memory;
+  mask_t *freemap; 
+  block_t *blocks;
+  line_t  *lines;
+  assoc_t  associativity;
+  uint32_t heap_size;
+  uint16_t block_size;
+  uint16_t cache_size;
+  uint16_t no_blocks;
+  uint16_t lines_per_block;
+  uint8_t  cache_line_size;
+  uint8_t  word_size;
+};
+
+
 
 /** Setup a heap to allocate in */
 heap_t *heap_setup(uint32_t heap_size, uint32_t cache_size, uint8_t cache_line_size, uint8_t word_size, assoc_t associativity);
